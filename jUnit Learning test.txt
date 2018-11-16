@@ -1,0 +1,88 @@
+jUnit Tutorial
+
+1. assertEquals,
+2. assertTrue,
+3. assertFalse,
+4. assertNull,
+5. assertArrayEquals,
+6. @Before : method annotated with it would run before every test method.
+7. @After : method annotated with it would run after every test method.
+8. @BeforeClass : method annotated with it would run before every class instantiation.
+	Note: The annotated method should be static, as it's class level annotation.
+9. @AfterClass : method annotated with it would run after every class instantiation.
+	Note: The annotated method should be static, as it's class level annotation.
+10. testing array assertArrayEquals
+11. testing exception
+	@Test(expected=<Exception Name>)
+	This test case should throw an exception then only it will show green line.
+	Example: @Test(expected=NullPointerException.class)
+12. Checking the performance of the unit test.
+	@Test(timeout=<time in milliseconds>)
+	This will test the performance whether the given function is finishing in specified time or not.
+	Example: @Test(timeout=1000) //1000 milliseconds means 1 second
+13. Parameterized test 
+	Since we have been testing the same assertEquals() in all the test cases. There is a shortcut for it.
+	We can use a collection id string array. 
+	Where each array contains 2 elements. 
+	The first one is input and the second one is the output.
+	We provide this array to the constructor of self class by using annotations.
+	Below are the steps to do it.
+	
+	Step 1 : Annotate the test class by @RunWith(Parameterized.class).
+	Step 2 : Create a static method, which returns Collection<String[]> and annotate it by @Parameters.
+	Step 3 : Create two instance variables of String type and write a constructor for it.
+	Step 4 : Write a normal test case method annotated by @Test and use the instance variables in it.
+	
+	package com.in28minutes.junit.helper;
+
+	import static org.junit.Assert.*;
+
+	import java.util.Arrays;
+	import java.util.Collection;
+
+	import org.junit.Test;
+	import org.junit.runner.RunWith;
+	import org.junit.runners.Parameterized;
+	import org.junit.runners.Parameterized.Parameters;
+
+	@RunWith(Parameterized.class)
+	public class StringHelperParameterizedTest {
+
+		StringHelper helper = new StringHelper();
+		
+		private String input;
+		private String expected;
+
+		public StringHelperParameterizedTest(String input, String expected) {
+			this.input = input;
+			this.expected = expected;
+		}
+
+		@Parameters
+		public static Collection<String[]> parameterSupplier() {
+			String parameters[][] = {
+				{"AACD", "CD"},
+				{"ACD", "CD"},
+				{"JK", "JK"},
+				{"AAACD", "ACD"}
+			};
+			return Arrays.asList(parameters);
+		}
+		
+		@Test
+		public void testTruncateAInFirst2Positions_testDifferentInputPairs() {
+			assertEquals(expected, helper.truncateAInFirst2Positions(input));
+		}
+	}
+
+	
+14. Organize jUnits Tests into Suites.
+
+	We can actually run more than one test classes by using test suites.
+	Test suite is a separate class used to accumulate many test classes and run them all at once.
+	steps 
+		1. right click => create jUnit test suite class
+		2. select the test classes while creating the test suite.
+		3. finish.
+		4. Run test suite as jUnit test.
+		

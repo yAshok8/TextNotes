@@ -1,0 +1,79 @@
+Spring AOP 
+
+In Enterprise applications we get the requirement of implementing a common concern throughout multiple modules like logger.
+Such a concern are called as cross cutting concern. 
+
+Such a common cross cutting functionality can be achieved in many ways such as.
+
+	1. Create a separate concern code class and use its object in other objects.
+	2. In same class write a static method.
+	3. Create an interface/parent class and use if in all child class.
+
+These implementations have below problem.
+
+	1. There can be two many objects dependent on cross cutting object.
+	2. You still need to write code for this dependency.
+	3. If you get to change the invocation code it will be a problem.
+	4. These cross cutting concerns are not plan of business need so creating too many dependencies is not acceptable.
+
+Steps to write aspects
+	1. Create the aspects (functions)
+	2. Configure the classes going to use those aspects.
+		This maps the point of execution with a function. That point of execution can be present in more than one class.
+		Whenever JVM hits those point of execution it runs the mapped aspect. If you want to add more classes to aspect,
+		you need to change the configuration file only (no nee@d to change the classes).
+		
+Typical AOP Aspect(method) format
+	@<advice_type>("<PointCut>")
+	{advice method}
+	
+@Before("execution(public String getName()) 
+public void getNameAdvice(){...} //this will run after every public getName() function returning String no matter which class has 
+such a join point.
+	
+	1. 
+	//Before every getters with any return value
+	@Before("execution(public * get*(..))")
+	public void LoggingAdvice() {
+		System.out.println("Advice Run. calling before get*() method.");		
+	}
+
+	2. Creating point cut (running for more than one advice)
+	//PointCut for same point [execution(public * set*(..))]
+	//This point cut can be used over multiple aspect methods. (see 3 and 4)
+	@Pointcut("execution(public * set*(..))")
+	public void dummyMethod() {}
+
+	
+	3. here dummyMethod() is the advice name (point no 2)
+	@Before("dummyMethod()")
+	public void LoggingSetterAdvice() {
+		System.out.println("Advice Run. calling before setter method.");
+	}
+	
+	4. here dummyMethod() is the advice name (point no 2)
+	@Before("dummyMethod()")
+	public void LoggingSetterSecondAdvice() {
+		System.out.println("2nd Advice Run. calling before setter method.");
+	}
+	
+	4. 
+		/*1. run advice to be run before all methods in Triangle.*/
+		/*2. We can grab the object here in Aspect method by making use of JoinPoint.*/
+		
+		@After("triangleAdviceDummy()")
+		public void triangleAdvice() {
+			System.out.println("Running after triangle method.");
+		}
+		
+		/* 
+		 * "within" is used to capture all the methods of a class or set of classes.
+		 * */
+		@Pointcut("within(com.healthcare.citiustech.model.Triangle)")
+		public void triangleAdviceDummy() {}
+	
+	5. public String get*(*) //there should be atleast one argument
+	   public String get*(..) //there should be one or more argument
+	   public String <package_path>.*.get*(..) //for all classes getters in specified package.
+	   
+	   

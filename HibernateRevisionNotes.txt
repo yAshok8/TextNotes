@@ -1,0 +1,578 @@
+Hibernate 
+
+	ORM tool
+	Used in data layer of applications
+	implements JPA (follows JPA rules)
+
+The Problem
+
+	Java to Object conversion
+	
+	Class => Table
+	Object => Row in table
+	
+	1. Mapping member variables to column
+	2. Mapping relationships
+	3. Handling data types
+	4. Managing changes to object state
+	
+	Huge gap between relational type and object type
+	
+03 : Saving without hibernate
+	1. JDBC Configuration
+	2. Model Object
+	3. Service method to create model object
+	4. Database design
+	5. DAO to save using SQL Queries
+	
+	Hibernate Way
+	1. JDBC Configuration - Hibernate Configuration
+	2. Model Object - Annotations
+	3. Service method to create model object - Use Hibernate API
+	4. Database design - Not needed
+	5. DAO to save using SQL Queries - Not Needed
+	
+	Hibernate Configuration File
+	default hibernate.cfg.xml
+	1. driver class => JDBC driver
+	2. URL => database URL + Port + db name
+	3. User name
+	4. Password
+	
+	JDBC Connection Pool Size
+	dialect =>  Its a language that Hibernate used in order to talk
+		to the underlying database in order to write and execute sql 
+		queries. Since Hibernate is third party therefore we need 
+		to specify the dialect in configuration.
+		
+		See org.hibernate.dialect to get the proper dialect.
+
+	Second level cache
+	show_sql: true/false
+	hbm2ddl.auto: Default schema operation
+	If set to 'create', hibernate will check database for every 
+	object model save request. If schema/structure is not found,
+	it will create by itself.
+	
+	mapping => specified names of model classes that hibernate persists
+		to the database.
+
+Annotations in Model
+
+1. @Entity
+2. @Id marks primary key
+		
+Using Hibernate API
+	
+	1. Create a session factory
+		One object per application
+		Created by referring configuration file
+	2. Create Sessions from session factory
+	3. Use session to save object
+	
+	How to build session factory
+	1. create a configuration object
+	2. provide it a configuration file (configure it)
+	3. build session factory on top of it.
+	
+	SessionFactory factory = new Configuration().configure().buildSessionFactory();
+	Session session = factory.openSession();
+	session.beginTransaction();
+	session.save(object);
+	session.getTransaction().commit();
+	
+Video 6: hbm2.ddl configuration and name annotations
+	1. create: drops old and creates new
+	2. update: only makes the change if it finds the change
+	
+Video 7 : Entity Name vs Table Name
+	@Basic,
+	@Transient and static variables are not persisted
+	@Temporal(TemporalType.DATE) Only date, .TIME Only  Time, .TIMESTAMP both date and time
+	Hibernate by default uses 255 variable chars size for every string data it persists.
+	i. @Lob for storing large objects or string value
+	ii. @clob => Character Large Objects
+	iii. @blob => Byte Stream Large Objects
+	Fetching data from table
+
+Video 9: Primary Keys
+
+	Natural Keys
+	If any element in table you decide will be Unique then that key is considered as Natural Key. Example email id can act as natural 
+	key. You can design database table such that email id will be unique. Here email id is serving two purposes one it is acting as 
+	primary key and also used for business requirement.
+	
+	Surrogate Key
+	You define a column explicitly for primary key purpose.
+	
+	For a natural key we need to provide value. Whereas for surrogate we can ask Hibernate to generate it by itself.
+	@GeneratedValue : tells hibernate to generate value
+	Strategy: 
+		AUTO (Default), 
+		IDENTITY (Hibernate uses identity column of database),
+		SEQUENCE (Uses sequence object in the database), 
+		TABLE (Use separate table for generating primary key value)
+	
+Video 10: Value Type & Embedding Objects
+	
+	Entity (Employee, User) has meaning of its own.
+	But a value object (Address) does not have meaning of its own.
+	It has to be associated with the entity.
+	@Embedded(optional)	   @Embeddable
+	 Student          ==>   Address
+	 
+Video 11: Attribute Override and Embedded Object Keys
+
+	You can override the column names of embedded object of the current object.
+	Say employee can have 2 embeddable address objects one for office and the other for home.
+	Employee class will have 2 address instances say "public Address homeAddress" and "public Address officeAddress" in sequence.
+	When hibernate persists, then the office address will get override while persisting if you have not used Attribute Override.
+	
+	@AttributeOverride used to override the column name of the embeddable object.
+	@AttributeOverride(name="street", column=@Column(name="HOME_STREET_NAME"))
+	
+	To Override multiple column names use @AttributeOverrides(@AttributeOverride(), @AttributeOverride(), ...)
+	
+	@EmbeddedId : Used to make an object as a primary key for the current object. Hibernate throws error if all the variables
+	combination value matches with existing same variables in database.
+	
+	@AttributeOverrides(
+		@AttributeOverride(name="street_name", @Columns=@Column("home_street_name")),
+		@AttributeOverride(name="city_name", @Columns=@Column("home_city_name"))
+	)
+	private Address homeAddress;
+	private Address officeAddress;
+	
+Video 12: Saving Collection
+	use @ElementCollection : tells hibernate every collection objects must be stored in separate table.
+	The hibernate will generate another with default table name.
+
+Video 13: Configuring Collections and Adding Keys
+
+	(optional) @JoinTable : Names the common table name, join column name.
+	If you want to name join table as per your requirement then use it.
+	
+	@ElementCollection
+	@JoinTable(name="USER_ADDRESS", joinColumn=@JoinColumn(name="USER_ID"))
+	
+	@CollectionId(Hibernate Annotation): Used to create primary key column for collection elements in separate table.
+
+Video 14: Proxy Objects and Eager and Lazy Fetch Types
+
+	If you have defined a collection in any object and you are trying to fetch it in a object by get() method.
+	By default hibernate chooses to give you a proxy object of it. This is called as LAZY FETCH TYPE.
+	That means all the small class level primitive data will be available to you.
+	It will not provide you the references or collection values. Only when you implement their corresponding 
+	getters then hibernate executes another query for fetching them.
+	
+	user = null;
+	session = sessionFactory.openSession();
+	user = (UserDetails) session.get(UserDetails.class,1); //default proxy UserDetails object
+	user.getAddresses(); //executes another query to fetch the collections
+	====================================
+	user = null;
+	session = sessionFactory.openSession();
+	user = (UserDetails) session.get(UserDetails.class,1); //default proxy UserDetails object
+	session.close() //closing the session
+	user.getAddresses(); //throws error
+
+	To set fetch type as Eager @ElementCollection(fetch=FetchType.EAGER)
+	
+Video 15: OneToOne Mapping
+class UserDetails
+	@OneToOne
+	@JoinColumn(name="VEHICLE_ID")  //Optional : join column name in UserDetails table
+	private Vehicle vehicle;
+	
+Video 16: OneToMany Mapping
+	User => Vehicles
+	@OneToMany
+	private Collection<Vehicle> vehicles = new ArrayList<>();
+	
+	The above configuration will create 3 tables. 1 UserDetails, 2. Vehicle, 3. UserDetails_Vehicle (Join Table)
+	
+	To configure the join table use below annotation
+	@JoinTable(name="USER_VEHICLES", 
+			JoinColumns=@JoinColumn(name="USER_ID"), 
+			inverseJoinColumn=@JoinColumn(name="VEHICLE_ID"))
+			
+	This will allow UserDetails object to get Vehicles.
+	
+	To get user from any vehicle we need to define ManyToOne on vehicle side.
+	
+	@ManyToOne
+	private User user;
+	
+	Note: In OneToMany in one sided relationship from user to vehicle we must have a separate table.
+	But on two sided relationship we may or may not have separate table. We can have user id stored in vehicle table.
+	
+	UserDetails 												==> 	Vehicle
+	@OneToMany(mappedBy="user")	 //No need of separate table	 |		@ManyToOne
+	private Collection<Vehicle> vehicles = new ArrayList<>();	 |		@JoinColumn(name="USER_ID") //column name for USER ID
+																		private UserDetails user;
+	
+Video 17: ManyToMany relationship
+
+	UserDetails 												==>  Vehicle
+	@ManyToMany													 |	 @ManyToMany(mappedBy="vehicles")
+	private Collection<Vehicle> vehicles = new ArrayList<>();	 |	 private UserDetails user;
+	this class will create table 								 | 	 this class will say there already exists table for this many to many relationship
+
+Video 18: CascadeTypes and Other thing
+
+	@NotFound Annotation: For a new vehicle its not always true that its corresponding user will be available. If you have any association
+		in vehicle table for user say ManyToOne and you do not set the user while persisting it (because it doesn't exist) then hibernate
+		throws error.It always requires the dependent object (here UserDetails) to be present in the entity. We use @NotFound annotation
+		which tells hibernate to persist the entity even its user instance is not defined.
+		
+	Cascade:
+	Problem: 
+	If a User has 10 vehicles and he wants to save all of them then he can save it as below.
+		session.save(user);
+		session.save(vehicle1);
+		.
+		.
+		session.save(vehicle10);
+		
+		This makes the code look so messy.
+		And if you save only user (without cascade) even though you have initialized all of its vehicle objects then
+		it throws exception 'object references are unsaved transient'.
+			
+	Solution:
+
+		@OneToMany(cascade=CascadeType.ALL) //hey hibernate if you come across this and you have not saved vehicle then save them and don't throw 
+											//any exception private Collection<Vehicle> vehicles = new ArrayList<>();
+
+Video 19: Implementing Inheritance
+
+	Why do we need Inheritance?
+	Reason 1:
+	Say a user has a vehicle id column. There are two separate tables one is for 2 wheelers and the other is for 4 wheeler. A user can either
+	have 2 wheeler or 4 wheeler. But the vehicle id column in user can not have foreign key relationship with both 2 wheeler and 4 wheeler.
+	Therefore there is need of Inheritance in Hibernate. We are telling hibernate we have such a requirement and it needs to be handled accordingly.
+	
+	Reason 2:
+	Suppose you create an abstract class Vehicle and create two child classes 2 wheeler and 4 wheeler. You also create their corresponding 
+	tables in database. In future if you add any property in Vehicle. In Java its easy both the child classes gets it but in database you need 
+	to make the changes manually. Here hibernate hops in and do the right work for you.
+	
+	---------------------------
+	A. Single Table Inheritance
+	---------------------------
+	
+	Suppose you define 3 classes as 1 Vehicle (parent) with name property, 
+									2 TwoWheeler (child of vehicle) with steering_handle property, 
+									3 FourWheeler (child of vehicle) with steering_wheel property.
+	If you mark every class @Entity hibernate will by default select Single table Inheritance.
+	It will create only one table with five column.
+	1 ID, 2 name, 3 steering_handle, 4 steering_wheel, d_type (discriminator type, for entering class name in db)
+	
+	vehicle objects corresponding row in db will have steering_wheel and steering_handle as null.
+	Two wheeler objects corresponding row in db will have steering_wheel as null.
+	Four wheeler objects corresponding row in db will have steering_handle as null.
+	
+	Annotations
+	
+	1. @Inheritance(optional) : 
+		Used to define inheritance strategy.
+		By default the strategy is single table.
+		Example @Inheritance(strategy=InheritanceType.SINGLE_TABLE)
+	2. @DiscriminatorColumn: Used to name discriminator column (default name is d_type).
+		@DiscriminatorColumn(
+			name="VEHICLE_TYPE",
+			discriminatorType=DiscriminatorType.STRING //uses string (name of class). options available char, integer
+		)
+	3. DiscriminatorValue: Used with the children classes to specify the names to be persisted in db.
+	By default hibernate puts name of the class in the column.
+		@DiscriminatorValue("bike") //No TwoWheeler
+		@DiscriminatorValue("car") //No FourWheeler
+
+	----------------------------------------------
+	B. Table per class (TABLE_PER_CLASS) strategy
+	----------------------------------------------
+	
+		1. @Inheritance(strategy=InheritanceType.TABLE_PER_CLASS)
+		2. No DiscriminatorColumn, DiscriminatorValue as there is going to be separate table for each class objects.
+		3. Vehicle will have id, name
+		4. TwoWheeler will have id(inherited), name(inherited) and steering_handle
+		4. FourWheeler will have id(inherited), name(inherited) and steering_wheel
+		5. Makes normalized data base.
+		
+	---------------------------
+	C. Joined (JOINED) strategy
+	---------------------------
+		1. In previous strategy we had Id, column in all the tables i.e. in Vehicle, TwoWheeler and FourWheeler tables.
+		2. This strategy is even more normalized than TABLE_PER_CLASS.
+		3. Creates separate tables for each class.
+		4. Vehicle will have id and name.
+		5. TwoWheeler will have vehicle_id (as a foreign key) and steering_handle.
+		6. FourWheeler will have vehicle_id (as a foreign key) and steering_wheel.
+		7. To extract the info of two wheeler we make use of this query.
+			select * from Vehicle join TwoWheeler on Vehicle.vehicle_id = TwoWheeler.vehicle_id;
+			
+Video 20: CRUD Operation
+
+	Steps:
+	1. get the session from session factory
+	2. session.openSession();
+	3. begin transaction on session. session.beginTransaction();
+	4. Perform CRUD here.
+	5. commit the transaction. session.getTransaction().commit();
+	6. close the session. session.close();
+	
+	Create : session.save(user);
+	Read : UserDetails user = (UserDetails) session.get(UserDetails.class, 5); //5 is user's primary id
+	Update : a. Read the user from database
+			 b. user.setName("Updated Name");
+			 c. session.update(user);
+	Delete: a. Read the user from database
+			b. session.delete(user);
+
+Video 21: Transient, Persistent and Detached Objects
+	
+	Transient and Detached is the object that hibernate is not going to keep track of.
+	Persistent state is the state of the object between the boundary of session.save() or session.get() and session.close();
+	
+	Consider below pseudo code.
+	
+	1. Create user object. UserDetails user = new UserDetails("Ram"); //here the object is in Transient state.
+	2. Create session and begin transaction.
+	3. Save the object. session.save(user); //here the object is in persistent state.
+	4. Update the field multiple time.
+		a. user.setUsername("Shyam"); 
+		b. user.setUsername("Aswin"); //latest change
+	5. Commit the transaction and close the session. 
+	6. Again update the state of user. //here the user is in detached state.
+	
+	Note: Once the hibernate has saved the object using the save() operation it keeps track of any changes made to it afterwards before commit.
+	This is also called persistent state. If the object changes multiple time then it updates the object with the last update (latest change). 
+	
+
+Video 22: Understanding the state changes.
+
+	1. Transient to persistent between save() or get() and commit()
+	2. Persistent to detached after commit()
+	3. Persistent to transient between delete() and commit().
+	
+	
+Video 23: Persisting the detached objects.
+
+	We can user session.update(object) to make the object coming from another session in persistent state.
+	
+	//1st session 
+	session begin transaction
+	session save object
+	session transaction commit
+	session close
+	//object detached
+	object changes
+	//2nd session
+	session begin transaction
+	//making object back to persistent state
+	session.update(object)
+	session transaction commit
+	session close
+	
+	Now even if object doesn't change between two sessions and in 2nd session the object is updating. Hibernate is going to execute 
+	update query. You can avoid this by configuring object entity bean as below.
+	
+	@org.hibernate.annotations.Entity(selectBeforeUpdate=true) //this is hibernate based annotation
+
+	
+Video 24: Introduction of HQL and the Query Object.
+
+	While writing the JDBC queries you look it with data table perspective. 
+	But in hibernate you query object instead of thinking of the DB table.
+	
+	Steps for HQL query
+	
+	1. Create a Query object.
+	2. Execute the query to get the response in the form of list.
+	
+	Examples: 
+	
+	1. Simple query to fetch all the user details object from the database.
+	Query query = session.createQuery("from UserDetails");
+	User users = query.list();
+	
+	2. Simple query to fetch all the user details object from the database where user id is greater than 5.
+	
+	Query query = session.createQuery("from UserDetails where userId > 5");
+	User users = query.list();
+	
+	here, 1. You are using object name and its instance variable name instead of db table and column name.
+		  2. No 'select *'.
+		  3. Getting the response in the form of list instead of result set.
+		  
+Video 25: Controlling the fetched columns and Pagination in Hibernate
+
+	A. Pagination 
+		Query query = session.createQuery("from UserDetails");
+		query.setFirstResult(3); //starts from 3rd record.
+		query.setMaxResults(4); //fetches 4 records after 3rd record
+		
+		The above query fetches all the column value in the form of list of UserDetails object.
+		You can controls the columns fetched. 
+		
+	B. Controlling the fetched columns
+	
+		a. Query query = session.createQuery("Select UserName from UserDetail"); 
+		
+		List<String> user_names = (List<String>) query.list();
+		Fetches the single column list. Therefore hibernate intelligently creates a list of String.
+		
+		b. Query query = session.createQuery("Select userId, userName from UserDetail");
+		
+		Fetches 2 columns of String.
+		Therefore hibernate intelligently creates a list of lists.
+		Each list contains 2 values.
+		
+		b. Query query = session.createQuery("Select new map(userId, userName) from UserDetail");
+		
+		In the form of Map.
+		
+Video 26: Understanding parameter binding and SQL Injection
+	
+	Query query = session.createQuery("from UserDetails where userId > ? and userName > ?")
+	
+	query.setInteger(0, 10);
+	query.setString(1, "Ashok");
+	
+	List<UserDetails> users = List<UserDetails> query.list();
+	
+	 --
+	|OR|
+	 --
+			
+	Query query = session.createQuery("from UserDetails where userId > :userId and userName > :userName")
+	
+	query.setInteger("userId", 10);
+	query.setString("userName", "Ashok");
+	
+	List<UserDetails> users = List<UserDetails> query.list();
+	
+Video 27: Named Queries
+
+	We perform a lot of common CRUD operations on entity. For an entity these common operations can be written in its entity class.
+	So we do not need to use the common HQL at all the places. This can be achieved by @NamedQuery.
+	
+	There are two types of NamedQuery. 1. @NamedQuery (for Object type queries), 2. @NamedNativeQuery (for DB table type queries)
+	
+	Example : 
+	
+	1. NamedQuery
+	
+	@NamedQuery(name="UserDetails.byId", query="from UserDetail where id = ?")
+	@Entity
+	public class UserDetail{
+		...
+	}
+	
+	Example: 
+	
+	Query query = session.getNamedQuery("UserDetails.byId");
+	query.setInteger(0,2);
+	List<UserDetails> users = (List<UserDetails>) query.list();
+	
+	2. NamedNativeQuery
+	
+	@NamedNativeQuery(name="UserDetails.byName", query="select * from user_detail where username = :userName", resultClass="UserDetail.class")
+	//here you specify typical SQL query with proper db table and column name. For hibernate to recognize which object to fed the data in
+	//you provide one more attribute 'resultClass'. This will tell hibernate, whatever data comes put it in this object.
+	@Entity
+	public class UserDetail{
+		...
+	}
+	
+	Example:
+	Query query = session.getNamedQuery("UserDetails.byName");
+	query.setString("userName", "Ashok");
+	List<UserDetails>  user = (List<UserDetails>) query.list();
+
+Video 28: Introduction to Criteria API
+
+	So far we have covered two ways to fetch the data from DB.
+	1. By session.get()
+	2. Using queries (either by 
+	
+	Problems: Suppose you have large amount of filters for any query. In such a case your query will be very large. 
+	Writing such a query is a problem and makes the code look unclean. Therefore there is 3rd way to write query, using 'Criteria'.
+	
+	By defining Criteria only you are specifying target object.
+	
+	Example:
+	
+	Criteria criteriaForUser = session.createCriteria(UserDetail.class); //setting the target object
+	criteriaForUser.add(Restrictions.eq("userName", "ashok"));
+	
+	//here you are specifying criteria (agreement) on UserDetail class.
+	//you are telling this is the criteria and these many restrictions (where clause) I am imposing upon it before fetching the data using criteria.
+	//The restriction in above case is like on this criteria (UserDetail table) I want user with username as 'Ashok'(Ashok is a great man).
+	//You can have restrictions for other cases too like greater than, less than and many more.
+	
+	List<UserDetail> users = (List<UserDetail>) criteriaForUser.list();
+	
+Video 29: Understanding Restrictions
+
+	By specifying restrictions you are actually filtering the query.
+	Typical restriction syntax : Restriction.<operator>(<propertyname>, <parameters...>);
+
+	Example:
+	Criteria criteriaForUser = session.createCriteria(UserDetail.class);
+	criteriaForUser.add(Restrictions.like("userName", "%user%"))
+				   .add(Restrictions.gt("userId", 5))
+				   .add(Restrictions.between("age", 10, 15);
+	
+	This is knows as restriction chaining.
+	
+	Note in above example you are chaining the restrictions and hibernate is going to calculate 'AND' operator upon them
+	i.e. 'Restriction 1' AND 'Restriction 2'
+	
+	What if you want OR type filtering.
+	
+	Criteria criteria = session.createCriteria(UserDetail.class);
+	criteria.add(Restrictions.or(Restriction 1, Restriction 2, ...));
+	i.e. 'Restriction 1' OR 'Restriction 2'
+	
+Video 30: Projections and Query by Example
+
+	--------------
+	A. Projections
+	--------------
+
+	The Projections in hibernate criteria is used for aggregation(Min,Max,Avg..) or Grouping (selecting specific columns) from the database.
+	
+	Example: For Grouping
+	
+	Criteria criteria = session.createCriteria(UserDetail.java)
+							   .setProjection(Projections.property("userName"));
+	//this will return only list of user names.
+	//This will not return List of objects
+	
+	Example: For Aggregation
+	
+	Criteria criteria = session.createCriteria(UserDetail.class)
+						.setProjection(Projections.max("userId"));
+						
+	Example: For Ordering
+	
+	Criteria criteria = session.createCriteria(UserDetail.class)
+								.addOrder(Order.desc("userId"));
+
+	----------------------
+	B. Querying By Example
+	----------------------
+	
+	Here as example you create a different object of the entity. You initialize some of its property and ask hibernate to provide objects
+	similar to that example object.
+	
+	UserDetail exampleUser = new UserDetail();
+	exampleUser.setUserName("User 1%");
+	exampleUser.setAge("15");
+	
+	Example example = Example.create(exampleUser).enableLike();
+	
+	Criteria criteria = session.createCriteria(UserDetail.class)
+							   .add(example);
+							   
+	This will give all users with names including "User 1".
