@@ -167,21 +167,21 @@ Video 14: Proxy Objects and Eager and Lazy Fetch Types
 	
 	user = null;
 	session = sessionFactory.openSession();
-	user = (UserDetails) session.get(UserDetails.class,1); //default proxy UserDetails object
+	user = (UserDetail) session.get(UserDetail.class,1); //default proxy UserDetail object
 	user.getAddresses(); //executes another query to fetch the collections
 	====================================
 	user = null;
 	session = sessionFactory.openSession();
-	user = (UserDetails) session.get(UserDetails.class,1); //default proxy UserDetails object
+	user = (UserDetail) session.get(UserDetail.class,1); //default proxy UserDetail object
 	session.close() //closing the session
 	user.getAddresses(); //throws error
 
 	To set fetch type as Eager @ElementCollection(fetch=FetchType.EAGER)
 	
 Video 15: OneToOne Mapping
-class UserDetails
+class UserDetail
 	@OneToOne
-	@JoinColumn(name="VEHICLE_ID")  //Optional : join column name in UserDetails table
+	@JoinColumn(name="VEHICLE_ID")  //Optional : join column name in UserDetail table
 	private Vehicle vehicle;
 	
 Video 16: OneToMany Mapping
@@ -189,14 +189,14 @@ Video 16: OneToMany Mapping
 	@OneToMany
 	private Collection<Vehicle> vehicles = new ArrayList<>();
 	
-	The above configuration will create 3 tables. 1 UserDetails, 2. Vehicle, 3. UserDetails_Vehicle (Join Table)
+	The above configuration will create 3 tables. 1 UserDetail, 2. Vehicle, 3. UserDetails_Vehicle (Join Table)
 	
 	To configure the join table use below annotation
 	@JoinTable(name="USER_VEHICLES", 
 			JoinColumns=@JoinColumn(name="USER_ID"), 
 			inverseJoinColumn=@JoinColumn(name="VEHICLE_ID"))
 			
-	This will allow UserDetails object to get Vehicles.
+	This will allow UserDetail object to get Vehicles.
 	
 	To get user from any vehicle we need to define ManyToOne on vehicle side.
 	
@@ -206,23 +206,23 @@ Video 16: OneToMany Mapping
 	Note: In OneToMany in one sided relationship from user to vehicle we must have a separate table.
 	But on two sided relationship we may or may not have separate table. We can have user id stored in vehicle table.
 	
-	UserDetails 												==> 	Vehicle
+	UserDetail 												==> 	Vehicle
 	@OneToMany(mappedBy="user")	 //No need of separate table	 |		@ManyToOne
 	private Collection<Vehicle> vehicles = new ArrayList<>();	 |		@JoinColumn(name="USER_ID") //column name for USER ID
-																		private UserDetails user;
+																		private UserDetail user;
 	
 Video 17: ManyToMany relationship
 
-	UserDetails 												==>  Vehicle
+	UserDetail 												==>  Vehicle
 	@ManyToMany													 |	 @ManyToMany(mappedBy="vehicles")
-	private Collection<Vehicle> vehicles = new ArrayList<>();	 |	 private UserDetails user;
+	private Collection<Vehicle> vehicles = new ArrayList<>();	 |	 private UserDetail user;
 	this class will create table 								 | 	 this class will say there already exists table for this many to many relationship
 
 Video 18: CascadeTypes and Other thing
 
 	@NotFound Annotation: For a new vehicle its not always true that its corresponding user will be available. If you have any association
 		in vehicle table for user say ManyToOne and you do not set the user while persisting it (because it doesn't exist) then hibernate
-		throws error.It always requires the dependent object (here UserDetails) to be present in the entity. We use @NotFound annotation
+		throws error.It always requires the dependent object (here UserDetail) to be present in the entity. We use @NotFound annotation
 		which tells hibernate to persist the entity even its user instance is not defined.
 		
 	Cascade:
@@ -321,7 +321,7 @@ Video 20: CRUD Operation
 	6. close the session. session.close();
 	
 	Create : session.save(user);
-	Read : UserDetails user = (UserDetails) session.get(UserDetails.class, 5); //5 is user's primary id
+	Read : UserDetail user = (UserDetail) session.get(UserDetail.class, 5); //5 is user's primary id
 	Update : a. Read the user from database
 			 b. user.setName("Updated Name");
 			 c. session.update(user);
@@ -335,7 +335,7 @@ Video 21: Transient, Persistent and Detached Objects
 	
 	Consider below pseudo code.
 	
-	1. Create user object. UserDetails user = new UserDetails("Ram"); //here the object is in Transient state.
+	1. Create user object. UserDetail user = new UserDetail("Ram"); //here the object is in Transient state.
 	2. Create session and begin transaction.
 	3. Save the object. session.save(user); //here the object is in persistent state.
 	4. Update the field multiple time.
@@ -382,22 +382,23 @@ Video 23: Persisting the detached objects.
 Video 24: Introduction of HQL and the Query Object.
 
 	While writing the JDBC queries you look it with data table perspective. 
-	But in hibernate you query object instead of thinking of the DB table.
+	But in hibernate you query objects instead of thinking of the DB tables.
 	
 	Steps for HQL query
 	
 	1. Create a Query object.
 	2. Execute the query to get the response in the form of list.
+	3. There is no 3rd step. That's it!!
 	
 	Examples: 
 	
 	1. Simple query to fetch all the user details object from the database.
-	Query query = session.createQuery("from UserDetails");
+	Query query = session.createQuery("from UserDetail");
 	User users = query.list();
 	
 	2. Simple query to fetch all the user details object from the database where user id is greater than 5.
 	
-	Query query = session.createQuery("from UserDetails where userId > 5");
+	Query query = session.createQuery("from UserDetail where userId > 5");
 	User users = query.list();
 	
 	here, 1. You are using object name and its instance variable name instead of db table and column name.
@@ -407,21 +408,23 @@ Video 24: Introduction of HQL and the Query Object.
 Video 25: Controlling the fetched columns and Pagination in Hibernate
 
 	A. Pagination 
-		Query query = session.createQuery("from UserDetails");
+		Query query = session.createQuery("from UserDetail");
 		query.setFirstResult(3); //starts from 3rd record.
 		query.setMaxResults(4); //fetches 4 records after 3rd record
 		
-		The above query fetches all the column value in the form of list of UserDetails object.
+		The above query fetches all the column value in the form of list of UserDetail object.
 		You can controls the columns fetched. 
 		
 	B. Controlling the fetched columns
 	
-		a. Query query = session.createQuery("Select UserName from UserDetail"); 
-		
+		a. 
+		Query query = session.createQuery("Select UserName from UserDetail"); 
 		List<String> user_names = (List<String>) query.list();
+		
 		Fetches the single column list. Therefore hibernate intelligently creates a list of String.
 		
-		b. Query query = session.createQuery("Select userId, userName from UserDetail");
+		b.
+		Query query = session.createQuery("Select userId, userName from UserDetail");
 		
 		Fetches 2 columns of String.
 		Therefore hibernate intelligently creates a list of lists.
@@ -433,27 +436,25 @@ Video 25: Controlling the fetched columns and Pagination in Hibernate
 		
 Video 26: Understanding parameter binding and SQL Injection
 	
-	Query query = session.createQuery("from UserDetails where userId > ? and userName > ?")
-	
+	Query query = session.createQuery("from UserDetail where userId > ? and userName > ?");
 	query.setInteger(0, 10);
 	query.setString(1, "Ashok");
-	
-	List<UserDetails> users = List<UserDetails> query.list();
+	List<UserDetail> users = List<UserDetail> query.list();
 	
 	 --
 	|OR|
 	 --
 			
-	Query query = session.createQuery("from UserDetails where userId > :userId and userName > :userName")
+	Query query = session.createQuery("from UserDetail where userId > :userId and userName > :userName")
 	
 	query.setInteger("userId", 10);
 	query.setString("userName", "Ashok");
 	
-	List<UserDetails> users = List<UserDetails> query.list();
+	List<UserDetail> users = List<UserDetail> query.list();
 	
 Video 27: Named Queries
 
-	We perform a lot of common CRUD operations on entity. For an entity these common operations can be written in its entity class.
+	We perform a lot of common CRUD operations on an entity. For an entity these common operations can be written in its entity class.
 	So we do not need to use the common HQL at all the places. This can be achieved by @NamedQuery.
 	
 	There are two types of NamedQuery. 1. @NamedQuery (for Object type queries), 2. @NamedNativeQuery (for DB table type queries)
@@ -462,7 +463,7 @@ Video 27: Named Queries
 	
 	1. NamedQuery
 	
-	@NamedQuery(name="UserDetails.byId", query="from UserDetail where id = ?")
+	@NamedQuery(name="UserDetail.byId", query="from UserDetail where id = ?")
 	@Entity
 	public class UserDetail{
 		...
@@ -470,14 +471,14 @@ Video 27: Named Queries
 	
 	Example: 
 	
-	Query query = session.getNamedQuery("UserDetails.byId");
+	Query query = session.getNamedQuery("UserDetail.byId");
 	query.setInteger(0,2);
-	List<UserDetails> users = (List<UserDetails>) query.list();
+	List<UserDetail> users = (List<UserDetail>) query.list();
 	
 	2. NamedNativeQuery
 	
-	@NamedNativeQuery(name="UserDetails.byName", query="select * from user_detail where username = :userName", resultClass="UserDetail.class")
-	//here you specify typical SQL query with proper db table and column name. For hibernate to recognize which object to fed the data in
+	@NamedNativeQuery(name="UserDetail.byName", query="select * from user_detail where username = :userName", resultClass="UserDetail.class")
+	//here you specify typical SQL query with proper db table and column name. For hibernate to recognize which object to feed the data in
 	//you provide one more attribute 'resultClass'. This will tell hibernate, whatever data comes put it in this object.
 	@Entity
 	public class UserDetail{
@@ -485,20 +486,20 @@ Video 27: Named Queries
 	}
 	
 	Example:
-	Query query = session.getNamedQuery("UserDetails.byName");
+	Query query = session.getNamedQuery("UserDetail.byName");
 	query.setString("userName", "Ashok");
-	List<UserDetails>  user = (List<UserDetails>) query.list();
+	List<UserDetail>  user = (List<UserDetail>) query.list();
 
 Video 28: Introduction to Criteria API
 
 	So far we have covered two ways to fetch the data from DB.
 	1. By session.get()
-	2. Using queries (either by 
+	2. Using queries (either by session.createQuery("<string query>") or session.getNamedQuery("<named query identifier>"))
 	
 	Problems: Suppose you have large amount of filters for any query. In such a case your query will be very large. 
 	Writing such a query is a problem and makes the code look unclean. Therefore there is 3rd way to write query, using 'Criteria'.
 	
-	By defining Criteria only you are specifying target object.
+	By defining Criteria only, you are specifying target object.
 	
 	Example:
 	
@@ -507,7 +508,7 @@ Video 28: Introduction to Criteria API
 	
 	//here you are specifying criteria (agreement) on UserDetail class.
 	//you are telling this is the criteria and these many restrictions (where clause) I am imposing upon it before fetching the data using criteria.
-	//The restriction in above case is like on this criteria (UserDetail table) I want user with username as 'Ashok'(Ashok is a great man).
+	//The restriction in above case is like on this criteria (UserDetail table) I want user with username as 'Ashok' (Ashok is a great man).
 	//You can have restrictions for other cases too like greater than, less than and many more.
 	
 	List<UserDetail> users = (List<UserDetail>) criteriaForUser.list();
@@ -523,7 +524,7 @@ Video 29: Understanding Restrictions
 				   .add(Restrictions.gt("userId", 5))
 				   .add(Restrictions.between("age", 10, 15);
 	
-	This is knows as restriction chaining.
+	This is known as restriction chaining.
 	
 	Note in above example you are chaining the restrictions and hibernate is going to calculate 'AND' operator upon them
 	i.e. 'Restriction 1' AND 'Restriction 2'
@@ -540,14 +541,14 @@ Video 30: Projections and Query by Example
 	A. Projections
 	--------------
 
-	The Projections in hibernate criteria is used for aggregation(Min,Max,Avg..) or Grouping (selecting specific columns) from the database.
+	The Projections in hibernate criteria is used for Aggregation (Min,Max,Avg..) or Grouping (selecting specific columns) from the database.
 	
 	Example: For Grouping
 	
 	Criteria criteria = session.createCriteria(UserDetail.java)
 							   .setProjection(Projections.property("userName"));
 	//this will return only list of user names.
-	//This will not return List of objects
+	//This will not return List of UserDetail objects
 	
 	Example: For Aggregation
 	
@@ -576,3 +577,104 @@ Video 30: Projections and Query by Example
 							   .add(example);
 							   
 	This will give all users with names including "User 1".
+	
+Video 31 : Cashing in Hibernate (minimizing the database trip)
+
+	A. First Level Cache - Session
+	
+		When the object is in persistent state and on top of it you perform multiple updates the hibernate selects the 
+		recent update. It is using session level cache.
+		
+		Example 1:
+		
+		session.beginTransaction();
+		
+		UserDetail user = (UserDetail) session.get(UserDetail.class, 5); //trip to database and save it in first level cache
+		UserDetail user2 = (UserDetail) session.get(UserDetail.class, 5);
+		
+		session.close();
+		
+		Example 2:
+		
+		session.beginTransaction();
+		
+		UserDetail user = (UserDetail) session.get(UserDetail.class, 5); //trip to database and save it in first level cache
+		user.setName("updated user"); // saves in the cache 
+		UserDetail user2 = (UserDetail) session.get(UserDetail.class, 5); //Retrieves from the cache
+		
+		session.close(); //trip to db to save the updated value
+		
+		Example 3:
+		
+		session.beginTransaction();
+		
+		UserDetail user = (UserDetail) session.get(UserDetail.class, 5); //trip to database and save it in first level cache
+		
+		session.close(); //closes the first level cache for session
+		
+		session2.beginTransaction(); //Opens the first level cache for session2
+		
+		UserDetail user2 = (UserDetail) session.get(UserDetail.class, 5); //trip to database and save it in first level cache
+		
+		session2.close(); //trip to db to save the updated value
+	
+	B. Second level cache 
+	
+		a. Across sessions in same application
+		b. Across different applications
+		c. Across clusters
+		
+		a. Across sessions in same application
+		
+		In order to configure the cache in same application we follow below steps.
+		
+		First Step : Make the application know that it needs to maintain second level cache(configuring hibernate.cfg)
+		
+			i. Make the application know that it needs to maintain second level cache
+				Put this in hibernate.cfg file.
+				<property name="cache.provider_class">org.hibernate.cache.EhCacheProvider</property>
+				
+			ii. Download the dependent jars for EhCache.
+			
+			iii. Switch it ON.
+				Put this in hibernate.cfg file (before the property specified in 1st step)
+				<property name="cache.use_second_level_cache">true</property>
+				<property name="cache.provider_class">org.hibernate.cache.EhCacheProvider</property>
+			
+		First Step : Configure the entity to be cache-able
+		
+			i. Put @Cacheable in entity class on top //tells hibernate that this needs to be cached in second level cache
+			ii. Provide caching strategy
+				@Cache(usage=CacheConcurrencyStrategy.<strategy type>)
+					Strategy type : READ_ONLY : Hibernate considers it read only and reads it only once. Does not reflect further changes upon it.
+									READ_WRITE : Considers both read and write.
+									
+Video 32: Using Query Cache
+
+	Hibernate treats the query differently than session. If you have used same query in two different session with second level cache active
+	you will find the system is still making journey to the database. Therefore we have to enable query cache separately.
+	
+	Steps for enabling the query cache.
+	
+	a. Enable the query cache.
+	<property name="cache.use_query_cache">true</property>
+	
+	b. Every time when you use the query, use setCacheable(true) method.
+	
+		session.beginTransaction();
+		
+		Query query1 = session.createQuery("from UserDetail user where user.userId = 1");
+		query1.setCacheable(true);  //checks the 2nd level cache if the data is there simply fetch it otherwise fetch it from database.
+		//in this case since its first time it makes trip to the database.
+		List<User> users = (List<User>) query.list();
+		
+		session.close(); 
+		
+		session2.beginTransaction();
+		
+		Query query2 = session2.createQuery("from UserDetail user where user.userId = 1");
+		query1.setCacheable(true);
+		//in this case it doesn't make trip to db.
+		List<User> users = (List<User>) query.list();		
+		
+		session2.close();
